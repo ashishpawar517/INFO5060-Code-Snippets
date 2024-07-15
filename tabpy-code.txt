@@ -1,0 +1,78 @@
+SCRIPT_STR("import numpy as np
+from scipy.optimize import minimize
+
+def get_prescriptive_results():
+    # initiatives and their estimated impact on factors
+    initiatives = {
+        "Flexible work hours": {"work_life_balance": 0.3, "stress": -0.2},
+        "Mental health workshops": {"stress": -0.15, "resources": 0.25},
+        "Manager training": {"management_support": 0.4, "culture": 0.2},
+        "Online therapy access": {"resources": 0.5, "stress": -0.25},
+        "Wellness programs": {"well_being": 0.3, "stress": -0.1},
+    }
+    # factor weights
+    factor_weights = {
+        "work_life_balance": 0.25,
+        "stress": 0.3,
+        "management_support": 0.2,
+        "resources": 0.15,
+        "culture": 0.1,
+        "well_being": 0.2,
+    }
+    # budget constraint
+    total_budget = 100000
+    initiative_costs = {
+        "Flexible work hours": 20000,
+        "Mental health workshops": 15000,
+        "Manager training": 25000,
+        "Online therapy access": 30000,
+        "Wellness programs": 20000,
+    }
+
+    def objective(x):
+        total_impact = 0
+        for i, initiative in enumerate(initiatives):
+            for factor, impact in initiatives[initiative].items():
+                total_impact += x[i] * impact * factor_weights[factor]
+        return -total_impact
+
+    def constraint(x):
+        return total_budget - sum(
+            x[i] * initiative_costs[initiative]
+            for i, initiative in enumerate(initiatives)
+        )
+
+    x0 = [0] * len(initiatives)
+    bounds = [(0, 1)] * len(initiatives)
+    constraint = {"type": "ineq", "fun": constraint}
+    result = minimize(
+        objective, x0, method="SLSQP", bounds=bounds, constraints=constraint
+    )
+
+    expected_impact = {
+        factor: sum(
+            result.x[i] * impact
+            for i, initiative in enumerate(initiatives)
+            for f, impact in initiatives[initiative].items()
+            if f == factor
+        )
+        for factor in factor_weights
+    }
+
+    output = []
+    for i, initiative in enumerate(initiatives):
+        row = [
+            initiative,
+            str(result.x[i]),
+            str(expected_impact["work_life_balance"]),
+            str(expected_impact["stress"]),
+            str(expected_impact["management_support"]),
+            str(expected_impact["resources"]),
+            str(expected_impact["culture"]),
+            str(expected_impact["well_being"]),
+        ]
+        output.append("|".join(row))
+
+    return "||".join(output)
+
+return get_prescriptive_results()", "")
